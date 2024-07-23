@@ -1,0 +1,37 @@
+services:
+  database:
+    container_name: pg
+    image: postgres:15-alpine
+    restart: "no"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: product-service-pg
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready" ]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+    ports:
+      - "5432:5432"
+    volumes:
+      - data:/var/lib/postgresql/data
+    networks:
+      - backend
+  server:
+    container_name: api
+    image: golang:latest
+    working_dir: /app
+    volumes:
+      - ./api:/app
+    command: go run -mod=vendor cmd/entrypoint/main.go cmd/entrypoint/router.go
+    ports:
+      - "3001:3001"
+    environment:
+      PG_URL: postgres://postgres:postgres@database:5432/product-service-pg?sslmode=disable
+    networks:
+      - backend
+volumes:
+  data:
+networks:
+  backend:

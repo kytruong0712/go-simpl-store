@@ -9,6 +9,7 @@ import (
 
 func Handler(
 	corsConf CORSConfig,
+	dbReadiness http.HandlerFunc,
 	routerFn func(r chi.Router),
 ) http.Handler {
 	r := chi.NewRouter()
@@ -23,6 +24,7 @@ func Handler(
 	}).Handler)
 
 	r.Get("/_/healthz", checkLiveness)
+	r.Get("/_/pg", dbReadiness)
 
 	r.Group(routerFn)
 

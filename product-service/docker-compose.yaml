@@ -16,8 +16,23 @@ services:
       - "5432:5432"
     volumes:
       - data:/var/lib/postgresql/data
-    networks:
-      - backend
+  migrate:
+    image: migrate/migrate:v4.15.2
+    profiles: [ "tools" ]
+    volumes:
+      - ./api/data/migrations:/migrations
+    entrypoint:
+      [
+        "migrate",
+        "-path",
+        "/migrations",
+        "-database",
+        "postgres://postgres:postgres@database:5432/product-service-pg?sslmode=disable",
+      ]
+    command: [ "up" ]
+    depends_on:
+      database:
+        condition: service_healthy
   server:
     container_name: api
     image: golang:latest
@@ -27,11 +42,9 @@ services:
     command: go run -mod=vendor cmd/entrypoint/main.go cmd/entrypoint/router.go
     ports:
       - "3001:3001"
+    depends_on:
+      - database
     environment:
       PG_URL: postgres://postgres:postgres@database:5432/product-service-pg?sslmode=disable
-    networks:
-      - backend
 volumes:
   data:
-networks:
-  backend:
